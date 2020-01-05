@@ -120,6 +120,7 @@ public class Controller implements Initializable {
 
                     setTitle("Chat : " + nickname);
 
+                    ///////////////////////////////////////////////////////////////////////////////////
                     File messageHistory = new File("client/src/chatHistory/" + nickname + ".txt");
                     FileWriter historyWriter = null;
 
@@ -128,15 +129,18 @@ public class Controller implements Initializable {
                         if (messageHistory.exists()) {
                             try (BufferedReader historyReader = new BufferedReader(new FileReader(messageHistory))) {
                                 int x;
+                                StringBuilder strHistory = new StringBuilder();
+
                                 while ((x = historyReader.read()) != -1) {
-                                    textArea.appendText(String.valueOf((char) x));
+                                    strHistory.append((char) x);
                                 }
-                                textArea.appendText("\n");
+                                textArea.appendText(strHistory + "\n");
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         } else {
                             messageHistory.createNewFile();
+                            textArea.appendText("История чата не найдена, создан файл для записи.");
                         }
 
                         historyWriter = new FileWriter(messageHistory, true);
@@ -167,6 +171,7 @@ public class Controller implements Initializable {
                             }
 
                         } else {
+
                             textArea.appendText(str + "\n");
 
                             //процесс записи истории
