@@ -19,9 +19,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -121,6 +119,32 @@ public class Controller implements Initializable {
                     }
 
                     setTitle("Chat : " + nickname);
+
+                    File messageHistory = new File("client/src/chatHistory/" + nickname + ".txt");
+                    FileWriter historyWriter = null;
+
+                    //процесс извлечения истории сообщений
+                    try {
+                        if (messageHistory.exists()) {
+                            try (BufferedReader historyReader = new BufferedReader(new FileReader(messageHistory))) {
+                                int x;
+                                while ((x = historyReader.read()) != -1) {
+                                    textArea.appendText(String.valueOf((char) x));
+                                }
+                                textArea.appendText("\n");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            messageHistory.createNewFile();
+                        }
+
+                        historyWriter = new FileWriter(messageHistory, true);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+
                     // цикл работы
                     while (true) {
                         String str = in.readUTF();
@@ -144,6 +168,14 @@ public class Controller implements Initializable {
 
                         } else {
                             textArea.appendText(str + "\n");
+
+                            //процесс записи истории
+                            try {
+                                historyWriter.write("\r\n"+str);
+                                historyWriter.flush();
+                            } catch (IOException e){
+                                e.printStackTrace();
+                            }
                         }
                     }
                 } catch (RuntimeException e) {
