@@ -18,12 +18,13 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -116,11 +117,14 @@ public class Controller implements Initializable {
                         if (str.equals("/end")) {
                             throw new RuntimeException("отключаемся");
                         }
- ////////////////
+                        ////////////////
                         textArea.appendText(str + "\n");
                     }
 
                     setTitle("Chat : " + nickname);
+                    getMessagesFromLog(nickname); //процесс извлечения истории сообщений
+                    FileWriter historyWriter = new FileWriter("client/src/chatHistory/" + nickname + ".txt", true);
+
                     // цикл работы
                     while (true) {
                         String str = in.readUTF();
@@ -143,7 +147,9 @@ public class Controller implements Initializable {
                             }
 
                         } else {
+
                             textArea.appendText(str + "\n");
+                            writeMessageToLog(historyWriter, str);//процесс записи истории
                         }
                     }
                 } catch (RuntimeException e) {
@@ -160,6 +166,54 @@ public class Controller implements Initializable {
                     textArea.clear();
                 }
             }).start();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeMessageToLog(FileWriter historyWriter, String str) {
+        try {
+            historyWriter.write(str + "\n");
+            historyWriter.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void getMessagesFromLog(String nickname) {
+
+        try {
+            File messageHistory = new File("client/src/chatHistory/" + nickname + ".txt");
+
+            if (messageHistory.exists()) {
+                final int LINES_TO_READ = 100;
+
+                try (ReversedLinesFileReader reader = new ReversedLinesFileReader(messageHistory, 4096, StandardCharsets.UTF_8)) {
+                    StringBuilder strHistory = new StringBuilder();
+                    for (int i = 0; i < LINES_TO_READ; i++) {
+                        String line = "";
+                        if ((line = reader.readLine()) != null){
+                            if (i != LINES_TO_READ-1) {
+                                strHistory.insert(0, "\n" + line);
+                            } else {
+                                strHistory.insert(0, line);
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (strHistory.length()!=0 ) {textArea.appendText(strHistory + "\n");}
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                messageHistory.createNewFile();
+                textArea.appendText("История чата не найдена, создан файл для записи.\n");
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
